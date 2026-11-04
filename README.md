@@ -1,34 +1,70 @@
 # OficinaFlow
 
-Gerenciamento de oficina mecânica: Java 17, Spring Boot 3 (MVC + Thymeleaf), JDBC, PostgreSQL, Docker.
+Sistema de gerenciamento de oficina mecânica, desenvolvido na disciplina de Programação Orientada a Objetos 2
+(UTFPR, Campus Cornélio Procópio, Engenharia da Computação). Professora: Gisele Alves Santana.
 
-## Executar (só precisa do Docker)
+Autores: Artur Gouvea Bertoluci, Matheus Akira Omori e Pedro Henrique Romano Gedminas.
+
+## Funcionalidades
+
+- Cadastro de clientes (com situação Ativo/Inativo), veículos, mecânicos e peças em estoque.
+- Ordens de serviço: abertura com cliente, veículo e mecânicos; itens de quatro tipos (peça, mão de obra, serviço fixo e
+  diagnóstico eletrônico); política de desconto; adição de itens depois de aberta; controle de status com transições
+  validadas.
+- Estoque: baixa automática, devolução ao cancelar a OS e alerta de estoque mínimo.
+- Consultas por cliente, veículo, mecânico, status e período; orçamento e nota de fechamento imprimíveis.
+- Relatórios: ordens concluídas por período, peças abaixo do mínimo e visão geral por status.
+
+## Tecnologias
+
+Java 17, Spring Boot 3.3 (Spring MVC), Thymeleaf, JDBC (driver `org.postgresql`), PostgreSQL 16, Maven,
+JUnit 5, Docker e Docker Compose.
+
+## Como executar (só precisa do Docker)
 
 ```
 docker compose up --build
 ```
 
-Abra http://localhost:8080 e entre com o usuário `utfpr` e a senha `12345` (login único de demonstração; para trocar, use as variáveis `OFICINA_LOGIN_USUARIO` e `OFICINA_LOGIN_SENHA`). O build roda no container (inclui os testes unitários) e o PostgreSQL
-cria as tabelas a partir de `sql/schema.sql`. Para recriar o banco do zero: `docker compose down -v`.
+Abra http://localhost:8080 e entre com o usuário `utfpr` e a senha `12345`.
+O login é único e de demonstração; para trocá-lo, defina as variáveis `OFICINA_LOGIN_USUARIO` e `OFICINA_LOGIN_SENHA`.
 
-Banco já criado antes da coluna `cliente.ativo` e dos índices (preserva os dados):
+O build acontece dentro do contêiner (e já roda os testes) e o PostgreSQL cria as tabelas a partir de `sql/schema.sql`.
+
+- Parar: `docker compose down`
+- Recriar o banco do zero, apagando os dados: `docker compose down -v`
+
+### Sem Docker
+
+Com JDK 17, Maven e um PostgreSQL com o banco `oficinaflow` criado a partir de `sql/schema.sql`:
 
 ```
-docker compose exec db psql -U postgres -d oficinaflow -c "ALTER TABLE cliente ADD COLUMN IF NOT EXISTS ativo BOOLEAN NOT NULL DEFAULT TRUE; CREATE INDEX IF NOT EXISTS idx_veiculo_cliente ON veiculo(cliente_id); CREATE INDEX IF NOT EXISTS idx_os_cliente ON ordem_servico(cliente_id); CREATE INDEX IF NOT EXISTS idx_os_veiculo ON ordem_servico(veiculo_id); CREATE INDEX IF NOT EXISTS idx_os_status ON ordem_servico(status); CREATE INDEX IF NOT EXISTS idx_os_abertura ON ordem_servico(data_abertura); CREATE INDEX IF NOT EXISTS idx_os_item_os ON os_item(os_id); CREATE INDEX IF NOT EXISTS idx_os_mecanico_mec ON os_mecanico(mecanico_id);"
+mvn spring-boot:run
 ```
 
-Para rodar fora do Docker (JDK 17 + Maven + PostgreSQL): `mvn spring-boot:run`.
-Banco padrão `localhost:5432/oficinaflow`, usuário e senha `postgres`; altere com
+Conexão padrão: `localhost:5432/oficinaflow`, usuário e senha `postgres`. Para mudar, use as variáveis
 `OFICINA_DB_URL`, `OFICINA_DB_USER` e `OFICINA_DB_PASS`.
+
+## Testes
+
+```
+mvn test
+```
+
+São 9 testes JUnit 5 (cálculo de valores e descontos, transições de status, regras de estoque, validação de cliente
+inativo e login). Eles não precisam de banco e também rodam durante o `docker compose up --build`.
 
 ## Estrutura (MVC + DAO)
 
-- `model`: entidades e regras (OS, itens, políticas de desconto, status).
-- `dao`: acesso JDBC (`@Repository`, `DataSource` injetado).
-- `service`: validação, estoque, documentos e orquestração (`@Service`).
-- `web` + `resources/templates`: controllers Spring MVC e telas Thymeleaf.
+- `model`: entidades e regras de negócio (OS, itens cobráveis, políticas de desconto, status).
+- `dao`: acesso a dados com JDBC (`@Repository`, `DataSource` injetado pelo Spring).
+- `service`: validação, estoque, regras de emissão e orquestração (`@Service`).
+- `web` e `resources/templates`: controllers Spring MVC e telas Thymeleaf.
+- `sql/schema.sql`: script de criação do banco, executado na criação do contêiner.
 
 ## Boas práticas
 
-- **OCP**: novo item cobrável = nova classe de `ItemCobravel` + 1 linha em `ItemFactory`. Nova política = nova classe de `PoliticaDesconto` + 1 linha em `PoliticasDesconto`. `OrdemServico` não muda.
-- **SRP**: `ValidadorOrdemServico`, `EstoqueService`, `EmissorDocumentoOrdemServico`, `OrdemServicoDAO` e `OrdemServicoService` têm uma responsabilidade cada.
+- **OCP**: novo tipo de item = nova classe que implementa `ItemCobravel` + 1 linha em `ItemFactory`. Nova política de
+  desconto = nova classe que implementa `PoliticaDesconto` + 1 linha em `PoliticasDesconto`. `OrdemServico` não muda.
+- **SRP**: `ValidadorOrdemServico`, `EstoqueService`, `EmissorDocumentoOrdemServico`, `OrdemServicoService` e
+  `OrdemServicoDAO` têm uma responsabilidade cada.
