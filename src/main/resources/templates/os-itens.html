@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Adicionar itens - OficinaFlow</title>
+  <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<main>
+  <div class="topo"><h1 th:text="'Adicionar itens - OS #' + ${os != null ? os.id : ''}"></h1></div>
+  <div class="msg erro" th:if="${erro}" th:text="${erro}"></div>
+
+  <form method="post" th:if="${os}" th:action="@{/os/{i}/itens(i=${os.id})}" class="nova"
+        onsubmit="return confirm('Adicionar os itens à OS? O novo total será ' + document.getElementById('total').textContent + '.')">
+    <div>
+      <section class="card">
+        <h2>Itens já lançados</h2>
+        <p>
+          <strong th:text="${os.cliente.nome}"></strong> - <span th:text="${os.veiculo.placa} + ' ' + ${os.veiculo.modelo}"></span>
+          <span class="badge" th:classappend="'badge-' + ${os.status.name()}" th:text="${os.status.descricao}"></span>
+        </p>
+        <div class="detalhe">
+          <div class="l" th:each="i : ${os.itens}">
+            <span th:text="${i.descricao}"></span>
+            <span th:text="'R$ ' + ${#numbers.formatDecimal(i.calcularValor(), 1, 'POINT', 2, 'COMMA')}"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Novos itens</h2>
+        <div id="itens"></div>
+        <button type="button" class="sec" onclick="addItem()">+ Adicionar item</button>
+      </section>
+    </div>
+
+    <aside class="card resumo">
+      <h2>Resumo</h2>
+      <input type="hidden" id="base" th:value="${os.calcularSubtotal()}">
+      <input type="hidden" id="desconto" th:value="${os.politicaDesconto.codigo}">
+      <div class="dica" th:text="'Desconto da OS: ' + ${os.politicaDesconto.nome}"></div>
+      <div class="l" style="margin-top:12px"><span>Subtotal (com novos itens)</span><span id="subtotal">R$ 0,00</span></div>
+      <div class="l desc"><span>Desconto</span><span id="valorDesconto">- R$ 0,00</span></div>
+      <div class="l total"><span>Novo total</span><span id="total">R$ 0,00</span></div>
+      <div style="margin-top:16px" class="acoes">
+        <button type="submit">Adicionar à OS</button>
+        <a class="btn sec" th:href="@{/os}">Voltar</a>
+      </div>
+      <div class="dica">O estoque das peças novas é baixado ao confirmar.</div>
+    </aside>
+  </form>
+  <a class="btn sec" th:unless="${os}" th:href="@{/os}">Voltar</a>
+
+  <th:block th:replace="~{fragments :: linha}"></th:block>
+</main>
+<script th:src="@{/itens.js}"></script>
+<script>
+  if (document.getElementById('itens')) { addItem(); }
+</script>
+</body>
+</html>

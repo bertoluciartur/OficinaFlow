@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${titulo} + ' - OficinaFlow'">OficinaFlow</title>
+  <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<main>
+  <div class="topo"><h1 th:text="${titulo}"></h1></div>
+  <div class="msg ok" th:if="${ok}" th:text="${ok}"></div>
+  <div class="msg erro" th:if="${erro}" th:text="${erro}"></div>
+  <div class="msg alerta" th:if="${alerta}" th:text="${alerta}"></div>
+
+  <form method="post" th:action="@{/{b}/salvar(b=${base})}" class="card form">
+    <input type="hidden" name="id" th:value="${id}">
+    <label th:each="c, st : ${campos}">
+      <span th:text="${c.rotulo} + (${c.obrigatorio} ? ' *' : '')"></span>
+      <select th:if="${c.opcoes != null}" th:name="${c.nome}" th:required="${c.obrigatorio}">
+        <option value=""></option>
+        <option th:each="o : ${c.opcoes}" th:value="${o}" th:text="${o}" th:selected="${o == valores[st.index]}"></option>
+      </select>
+      <input th:unless="${c.opcoes != null}" th:name="${c.nome}" th:value="${valores[st.index]}"
+             th:required="${c.obrigatorio}">
+    </label>
+    <div class="acoes">
+      <button type="submit" th:text="${id == 0} ? 'Cadastrar' : 'Salvar alterações'">Salvar</button>
+      <a class="btn sec" th:href="@{/{b}(b=${base})}">Limpar</a>
+    </div>
+  </form>
+
+  <div class="card tabela">
+    <table>
+      <tr>
+        <th>ID</th>
+        <th th:each="c : ${campos}" th:text="${c.rotulo}"></th>
+        <th></th>
+      </tr>
+      <tr th:if="${#lists.isEmpty(linhas)}"><td th:colspan="${#lists.size(campos) + 2}">Nenhum registro cadastrado.</td></tr>
+      <tr th:each="l : ${linhas}">
+        <td th:each="v : ${l}" th:text="${v}"></td>
+        <td>
+          <div class="acoes">
+            <a class="btn sec small" th:href="@{/{b}/{i}(b=${base},i=${l[0]})}">Editar</a>
+            <form method="post" th:action="@{/{b}/{i}/excluir(b=${base},i=${l[0]})}" class="inline"
+                  onsubmit="return confirm('Excluir o registro?')">
+              <button type="submit" class="danger small">Excluir</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</main>
+</body>
+</html>

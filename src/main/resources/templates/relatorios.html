@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Relatórios - OficinaFlow</title>
+  <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<main>
+  <div class="topo sem-impressao">
+    <h1>Relatórios</h1>
+    <button type="button" onclick="window.print()">Imprimir</button>
+  </div>
+  <div class="msg erro" th:if="${erro}" th:text="${erro}"></div>
+
+  <h2>Visão geral das ordens de serviço</h2>
+  <div class="kpis">
+    <div class="kpi" th:each="e : ${porStatus}">
+      <span class="badge" th:classappend="'badge-' + ${e.key.name()}" th:text="${e.key.descricao}"></span>
+      <div class="kpi-valor" th:text="${e.value}"></div>
+    </div>
+  </div>
+
+  <h2>Ordens concluídas por período</h2>
+  <form method="get" th:action="@{/relatorios}" class="card form sem-impressao">
+    <label>De <input type="date" name="de" th:value="${de}"></label>
+    <label>Até <input type="date" name="ate" th:value="${ate}"></label>
+    <div><button type="submit">Gerar</button></div>
+  </form>
+  <div class="dica">O período considera a data de conclusão da OS.</div>
+
+  <div class="kpis">
+    <div class="kpi"><span>OS concluídas</span><div class="kpi-valor" th:text="${#lists.size(concluidas)}"></div></div>
+    <div class="kpi"><span>Faturamento</span>
+      <div class="kpi-valor" th:text="'R$ ' + ${#numbers.formatDecimal(faturamento, 1, 'POINT', 2, 'COMMA')}"></div></div>
+    <div class="kpi"><span>Ticket médio</span>
+      <div class="kpi-valor" th:text="'R$ ' + ${#numbers.formatDecimal(ticket, 1, 'POINT', 2, 'COMMA')}"></div></div>
+  </div>
+
+  <div class="card tabela">
+    <table>
+      <tr><th>OS</th><th>Abertura</th><th>Cliente</th><th>Veículo</th><th class="dir">Total</th></tr>
+      <tr th:if="${#lists.isEmpty(concluidas)}"><td colspan="5">Nenhuma OS concluída no período.</td></tr>
+      <tr th:each="os : ${concluidas}">
+        <td th:text="'#' + ${os.id}"></td>
+        <td th:text="${#temporals.format(os.dataAbertura, 'dd/MM/yyyy')}"></td>
+        <td th:text="${os.cliente.nome}"></td>
+        <td th:text="${os.veiculo.placa} + ' - ' + ${os.veiculo.modelo}"></td>
+        <td class="dir" th:text="'R$ ' + ${#numbers.formatDecimal(os.calcularValorTotal(), 1, 'POINT', 2, 'COMMA')}"></td>
+      </tr>
+    </table>
+  </div>
+
+  <h2>Peças com estoque abaixo do mínimo</h2>
+  <div class="card tabela">
+    <table>
+      <tr><th>Código</th><th>Descrição</th><th>Fornecedor</th><th class="dir">Em estoque</th><th class="dir">Mínimo</th></tr>
+      <tr th:if="${#lists.isEmpty(abaixoMinimo)}"><td colspan="5">Nenhuma peça abaixo do estoque mínimo.</td></tr>
+      <tr th:each="p : ${abaixoMinimo}">
+        <td th:text="${p.codigo}"></td>
+        <td th:text="${p.descricao}"></td>
+        <td th:text="${p.fornecedor}"></td>
+        <td class="dir" th:text="${p.quantidade}"></td>
+        <td class="dir" th:text="${p.estoqueMinimo}"></td>
+      </tr>
+    </table>
+  </div>
+</main>
+</body>
+</html>

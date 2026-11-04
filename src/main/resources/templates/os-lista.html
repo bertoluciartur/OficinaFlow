@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ordens de Serviço - OficinaFlow</title>
+  <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<main>
+  <div class="topo">
+    <h1>Ordens de Serviço</h1>
+    <a class="btn" th:href="@{/os/nova}">+ Nova OS</a>
+  </div>
+  <div class="msg ok" th:if="${ok}" th:text="${ok}"></div>
+  <div class="msg erro" th:if="${erro}" th:text="${erro}"></div>
+
+  <form method="get" th:action="@{/os}" class="card form">
+    <label>Cliente
+      <select name="cliente"><option value="">Todos</option>
+        <option th:each="c : ${clientes}" th:value="${c.id}" th:text="${c}"></option></select>
+    </label>
+    <label>Veículo
+      <select name="veiculo"><option value="">Todos</option>
+        <option th:each="v : ${veiculos}" th:value="${v.id}" th:text="${v}"></option></select>
+    </label>
+    <label>Mecânico
+      <select name="mecanico"><option value="">Todos</option>
+        <option th:each="m : ${mecanicos}" th:value="${m.id}" th:text="${m}"></option></select>
+    </label>
+    <label>Status
+      <select name="status"><option value="">Todos</option>
+        <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.descricao}"></option></select>
+    </label>
+    <label>De <input type="date" name="de"></label>
+    <label>Até <input type="date" name="ate"></label>
+    <div><button type="submit">Filtrar</button></div>
+  </form>
+
+  <div class="card tabela">
+    <table>
+      <tr><th>OS</th><th>Abertura</th><th>Status</th><th>Cliente / Veículo</th><th>Mecânicos</th>
+        <th>Valor</th><th>Ações</th></tr>
+      <tr th:if="${#lists.isEmpty(ordens)}"><td colspan="7">Nenhuma ordem de serviço encontrada.</td></tr>
+      <tr th:each="os : ${ordens}">
+        <td th:text="'#' + ${os.id}"></td>
+        <td th:text="${#temporals.format(os.dataAbertura, 'dd/MM/yyyy')}"></td>
+        <td><span class="badge" th:classappend="'badge-' + ${os.status.name()}" th:text="${os.status.descricao}"></span></td>
+        <td><strong th:text="${os.cliente.nome}"></strong><br>
+          <span th:text="${os.veiculo.placa} + ' - ' + ${os.veiculo.modelo}"></span></td>
+        <td th:text="${#strings.listJoin(os.mecanicos.![nome], ', ')}"></td>
+        <td>
+          <details>
+            <summary th:text="'R$ ' + ${#numbers.formatDecimal(os.calcularValorTotal(), 1, 'POINT', 2, 'COMMA')}"></summary>
+            <div class="detalhe">
+              <div class="l" th:each="i : ${os.itens}">
+                <span th:text="${i.descricao}"></span>
+                <span th:text="'R$ ' + ${#numbers.formatDecimal(i.calcularValor(), 1, 'POINT', 2, 'COMMA')}"></span>
+              </div>
+              <div class="l tot"><span>Subtotal</span>
+                <span th:text="'R$ ' + ${#numbers.formatDecimal(os.calcularSubtotal(), 1, 'POINT', 2, 'COMMA')}"></span></div>
+              <div class="l"><span th:text="'Desconto: ' + ${os.politicaDesconto.nome}"></span>
+                <span th:text="'- R$ ' + ${#numbers.formatDecimal(os.calcularDesconto(), 1, 'POINT', 2, 'COMMA')}"></span></div>
+              <div class="l tot"><span>Total</span>
+                <span th:text="'R$ ' + ${#numbers.formatDecimal(os.calcularValorTotal(), 1, 'POINT', 2, 'COMMA')}"></span></div>
+            </div>
+          </details>
+        </td>
+        <td>
+          <div class="acoes">
+            <form method="post" th:action="@{/os/{i}/status(i=${os.id})}" class="inline acoes">
+              <select name="status">
+                <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.descricao}"
+                        th:selected="${s == os.status}"></option>
+              </select>
+              <button type="submit" class="small">Atualizar</button>
+            </form>
+            <a class="btn sec small" th:if="${os.status.name() == 'ABERTA' or os.status.name() == 'EM_ANDAMENTO'}"
+               th:href="@{/os/{i}/itens(i=${os.id})}">+ Itens</a>
+            <a class="btn sec small" th:href="@{/os/{i}/orcamento(i=${os.id})}">Orçamento</a>
+            <a class="btn sec small" th:href="@{/os/{i}/nota(i=${os.id})}">Nota</a>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</main>
+</body>
+</html>

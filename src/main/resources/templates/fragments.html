@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<nav th:fragment="nav">
+  <strong>OficinaFlow</strong>
+  <a th:href="@{/os}">Ordens de Serviço</a>
+  <a th:href="@{/clientes}">Clientes</a>
+  <a th:href="@{/veiculos}">Veículos</a>
+  <a th:href="@{/mecanicos}">Mecânicos</a>
+  <a th:href="@{/pecas}">Peças e Estoque</a>
+  <a th:href="@{/relatorios}">Relatórios</a>
+  <form method="post" th:action="@{/logout}" class="sair"><button type="submit">Sair</button></form>
+  <script>
+    document.querySelectorAll('nav a').forEach(a => {
+      if (location.pathname.startsWith(a.getAttribute('href'))) a.classList.add('active');
+    });
+  </script>
+</nav>
+
+<!-- Modelo de linha de item, usado em nova OS e em adicionar itens (requer "pecas" no modelo). -->
+<template id="linha" th:fragment="linha">
+  <div class="item">
+    <label>Tipo do item
+      <select name="tipo" onchange="mudouTipo(this)">
+        <option value=""></option>
+        <option value="PECA">Peça</option>
+        <option value="MAO_DE_OBRA">Mão de obra (horas x valor da hora)</option>
+        <option value="SERVICO_FIXO">Serviço de valor fixo</option>
+        <option value="DIAGNOSTICO">Diagnóstico eletrônico</option>
+      </select>
+    </label>
+    <div class="campos">
+      <label data-campo="peca">Peça
+        <select name="peca" onchange="recalcular()">
+          <option value=""></option>
+          <option th:each="p : ${pecas}" th:value="${p.id}" th:attr="data-valor=${p.valorUnitario}"
+                  th:text="${p.codigo} + ' - ' + ${p.descricao} + ' (R$ ' + ${#numbers.formatDecimal(p.valorUnitario, 1, 'POINT', 2, 'COMMA')} + ' | estoque: ' + ${p.quantidade} + ')'"></option>
+        </select>
+      </label>
+      <label data-campo="desc"><span>Descrição</span><input name="desc" oninput="recalcular()"></label>
+      <label data-campo="qtd"><span>Quantidade</span><input name="qtd" type="number" min="1" oninput="recalcular()"></label>
+      <label data-campo="v1"><span>Valor</span><input name="v1" inputmode="decimal" oninput="recalcular()"></label>
+      <label data-campo="v2"><span>Valor</span><input name="v2" inputmode="decimal" oninput="recalcular()"></label>
+    </div>
+    <div class="rodape">
+      <span class="valor-linha">Valor do item: <span class="vl">R$ 0,00</span></span>
+      <button type="button" class="danger small" onclick="this.closest('.item').remove(); recalcular()">Remover</button>
+    </div>
+  </div>
+</template>
+</body>
+</html>

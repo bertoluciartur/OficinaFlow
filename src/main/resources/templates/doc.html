@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${titulo != null ? titulo : 'Documento'} + ' - OficinaFlow'">Documento - OficinaFlow</title>
+  <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<main>
+  <div class="topo sem-impressao">
+    <h1>Documento da OS</h1>
+    <div class="acoes">
+      <button type="button" onclick="window.print()">Imprimir</button>
+      <a class="btn sec" th:href="@{/os}">Voltar</a>
+    </div>
+  </div>
+  <div class="msg erro" th:if="${erro}" th:text="${erro}"></div>
+
+  <article class="documento" th:if="${os}">
+    <header class="doc-cab">
+      <div>
+        <div class="doc-marca">OficinaFlow</div>
+        <div class="doc-sub">Oficina Mecânica</div>
+      </div>
+      <div class="doc-id">
+        <div class="doc-titulo" th:text="${titulo}"></div>
+        <div>OS nº <strong th:text="${os.id}"></strong></div>
+        <div>Abertura: <span th:text="${#temporals.format(os.dataAbertura, 'dd/MM/yyyy')}"></span></div>
+        <div>Emissão: <span th:text="${#temporals.format(#temporals.createToday(), 'dd/MM/yyyy')}"></span></div>
+      </div>
+    </header>
+
+    <section class="doc-dados">
+      <div>
+        <h3>Cliente</h3>
+        <p><strong th:text="${os.cliente.nome}"></strong></p>
+        <p>CPF/CNPJ: <span th:text="${os.cliente.cpfCnpj}"></span></p>
+        <p th:if="${os.cliente.telefone != null and !#strings.isEmpty(os.cliente.telefone)}">Telefone: <span th:text="${os.cliente.telefone}"></span></p>
+        <p th:if="${os.cliente.endereco != null and !#strings.isEmpty(os.cliente.endereco)}" th:text="${os.cliente.endereco}"></p>
+      </div>
+      <div>
+        <h3>Veículo</h3>
+        <p><strong th:text="${os.veiculo.marca} + ' ' + ${os.veiculo.modelo}"></strong></p>
+        <p>Placa: <span th:text="${os.veiculo.placa}"></span></p>
+        <p th:if="${os.veiculo.ano > 0}">Ano: <span th:text="${os.veiculo.ano}"></span></p>
+      </div>
+      <div>
+        <h3>Atendimento</h3>
+        <p>Status: <strong th:text="${os.status.descricao}"></strong></p>
+        <p>Mecânico(s): <span th:text="${#strings.listJoin(os.mecanicos.![nome], ', ')}"></span></p>
+      </div>
+    </section>
+
+    <table class="doc-itens">
+      <tr><th style="width:48px">Item</th><th>Descrição</th><th class="dir">Valor</th></tr>
+      <tr th:each="i, st : ${os.itens}">
+        <td th:text="${st.count}"></td>
+        <td th:text="${i.descricao}"></td>
+        <td class="dir" th:text="'R$ ' + ${#numbers.formatDecimal(i.calcularValor(), 1, 'POINT', 2, 'COMMA')}"></td>
+      </tr>
+    </table>
+
+    <div class="doc-totais">
+      <div class="l"><span>Subtotal</span>
+        <span th:text="'R$ ' + ${#numbers.formatDecimal(os.calcularSubtotal(), 1, 'POINT', 2, 'COMMA')}"></span></div>
+      <div class="l"><span th:text="'Desconto (' + ${os.politicaDesconto.nome} + ')'"></span>
+        <span th:text="'- R$ ' + ${#numbers.formatDecimal(os.calcularDesconto(), 1, 'POINT', 2, 'COMMA')}"></span></div>
+      <div class="l total"><span>Total</span>
+        <span th:text="'R$ ' + ${#numbers.formatDecimal(os.calcularValorTotal(), 1, 'POINT', 2, 'COMMA')}"></span></div>
+    </div>
+
+    <p class="doc-obs" th:unless="${nota}">
+      Orçamento sujeito à confirmação de disponibilidade das peças e à aprovação do cliente.
+    </p>
+
+    <div class="doc-assinaturas" th:if="${nota}">
+      <div><div class="linha-ass"></div>Cliente</div>
+      <div><div class="linha-ass"></div>Responsável pela oficina</div>
+    </div>
+
+    <footer class="doc-rodape">Documento de controle interno, sem valor fiscal.</footer>
+  </article>
+</main>
+</body>
+</html>

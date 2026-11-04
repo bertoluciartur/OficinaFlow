@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nova OS - OficinaFlow</title>
+  <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<main>
+  <div class="topo"><h1>Nova ordem de serviço</h1></div>
+  <div class="msg erro" th:if="${erro}" th:text="${erro}"></div>
+
+  <form method="post" th:action="@{/os}" class="nova"
+        onsubmit="return confirm('Confirmar a abertura da OS no valor de ' + document.getElementById('total').textContent + '?')">
+    <div>
+      <section class="card">
+        <h2><span class="passo">1</span>Cliente e veículo</h2>
+        <div class="grid">
+          <label>Cliente *
+            <select name="cliente" id="cliente" required>
+              <option value=""></option>
+              <option th:each="c : ${clientes}" th:value="${c.id}" th:text="${c}"></option>
+            </select>
+          </label>
+          <label>Veículo *
+            <select name="veiculo" id="veiculo" required>
+              <option value=""></option>
+              <option th:each="v : ${veiculos}" th:value="${v.id}" th:text="${v}"
+                      th:attr="data-cliente=${v.proprietario.id}"></option>
+            </select>
+          </label>
+        </div>
+        <div class="dica">Só aparecem os veículos do cliente escolhido. Clientes inativos não aparecem.</div>
+      </section>
+
+      <section class="card">
+        <h2><span class="passo">2</span>Mecânicos</h2>
+        <div class="checks">
+          <label class="check" th:each="m : ${mecanicos}">
+            <input type="checkbox" name="mecanico" th:value="${m.id}"> <span th:text="${m}"></span>
+          </label>
+        </div>
+        <div class="dica">O primeiro marcado é o responsável pela OS.</div>
+      </section>
+
+      <section class="card">
+        <h2><span class="passo">3</span>Itens da OS</h2>
+        <div id="itens"></div>
+        <button type="button" class="sec" onclick="addItem()">+ Adicionar item</button>
+      </section>
+    </div>
+
+    <aside class="card resumo">
+      <h2><span class="passo">4</span>Resumo</h2>
+      <label>Desconto
+        <select name="desconto" id="desconto">
+          <option th:each="p : ${politicas}" th:value="${p.codigo}" th:text="${p.nome}"></option>
+        </select>
+      </label>
+      <div class="l" style="margin-top:12px"><span>Subtotal</span><span id="subtotal">R$ 0,00</span></div>
+      <div class="l desc"><span>Desconto</span><span id="valorDesconto">- R$ 0,00</span></div>
+      <div class="l total"><span>Total</span><span id="total">R$ 0,00</span></div>
+      <div style="margin-top:16px" class="acoes">
+        <button type="submit">Confirmar abertura</button>
+        <a class="btn sec" th:href="@{/os}">Cancelar</a>
+      </div>
+      <div class="dica">O estoque das peças é baixado ao confirmar.</div>
+    </aside>
+  </form>
+
+  <th:block th:replace="~{fragments :: linha}"></th:block>
+</main>
+<script th:src="@{/itens.js}"></script>
+<script>
+  const cliente = document.getElementById('cliente'), veiculo = document.getElementById('veiculo');
+  function filtrar() {
+    for (const o of veiculo.options) { o.hidden = o.disabled = !!o.value && o.dataset.cliente !== cliente.value; }
+    veiculo.value = '';
+  }
+  cliente.onchange = filtrar;
+  document.getElementById('desconto').onchange = recalcular;
+  filtrar();
+  addItem();
+</script>
+</body>
+</html>
